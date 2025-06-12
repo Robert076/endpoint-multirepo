@@ -29,6 +29,11 @@ func main() {
 		validatorHost := os.Getenv("VALIDATOR_HOST")
 		validatorPort := os.Getenv("VALIDATOR_PORT")
 
+		if validatorHost == "" || validatorPort == "" {
+			http.Error(w, "Host or port are empty", http.StatusInternalServerError)
+			log.Fatalf("%s: Unitialized env vars", serviceName)
+		}
+
 		req := new(data.RequestBody)
 		req.Name = "test"
 
@@ -41,7 +46,7 @@ func main() {
 
 		body := bytes.NewBuffer(b)
 
-		response, err := http.Post("http://"+validatorHost+":"+validatorPort, "application/json; charset=utf-8", body)
+		response, err := http.Post("http://"+validatorHost+":"+validatorPort+"/validator", "application/json; charset=utf-8", body)
 
 		if err != nil {
 			http.Error(w, "Cannot validate request.", http.StatusInternalServerError)
@@ -55,7 +60,13 @@ func main() {
 		log.Printf("StatusCode received from server is: %d", response.StatusCode)
 	})
 
-	endpointPort := os.Getenv("endpointPort")
+	endpointPort := os.Getenv("ENDPOINT_PORT")
+
+	if endpointPort == "" {
+		log.Fatalf("%s: Uninitialized env var for endpoint port", serviceName)
+		return
+	}
+
 	if err := http.ListenAndServe(":"+endpointPort, nil); err != nil {
 		log.Fatalf("%s: Error starting http server, %v", serviceName, err)
 	}
